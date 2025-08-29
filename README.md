@@ -1,0 +1,1 @@
+este é um pequeno projeto de banco de dados que simula um sistema de uma loja de eletronicos, tem as funcoes de agregacao, count, min, max, alem disso tem as operacoes de CRUD(criar, deletar, atualizar e ler).
