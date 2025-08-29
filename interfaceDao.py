@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from modelo import aparelho
+from modelo import aparelho, Comprador
 
 class AparelhoDAOInterface(ABC):
     @abstractmethod
@@ -28,4 +28,18 @@ class AparelhoDAOInterface(ABC):
 
     @abstractmethod
     def select_min_max_price(self):
+        pass
+
+
+class CompradorDAOInterface(ABC):
+    @abstractmethod
+    def create(self, comprador: Comprador):
+        pass
+
+    @abstractmethod
+    def list_all(self):
+        pass
+
+    @abstractmethod
+    def get_by_aparelho_id(self, aparelho_id: int):
         pass

@@ -1,11 +1,9 @@
-
 import psycopg2
-from interfaceDao import AparelhoDAOInterface
-from modelo import aparelho
-
+from interfaceDao import AparelhoDAOInterface, CompradorDAOInterface
+from modelo import aparelho, Comprador
+from datetime import date
 
 DB_CONFIG = 'postgresql://novo_usuario:nada123@localhost:5432/novo_banco_de_dados'
-
 
 class AparelhoDAOPostgreSQL(AparelhoDAOInterface):
     def __init__(self):
@@ -78,7 +76,8 @@ class AparelhoDAOPostgreSQL(AparelhoDAOInterface):
         query = "SELECT SUM(quantidade) FROM aparelhos"
         cursor = self._execute_query(query)
         if cursor:
-            return cursor.fetchone()[0]
+            result = cursor.fetchone()[0]
+            return result if result is not None else 0
         return 0
 
     def select_min_max_price(self):
@@ -86,4 +85,48 @@ class AparelhoDAOPostgreSQL(AparelhoDAOInterface):
         cursor = self._execute_query(query)
         if cursor:
             return cursor.fetchone()
+        return (None, None)
+
+class CompradorDAOPostgreSQL(CompradorDAOInterface):
+    def __init__(self, conn):
+        self.conn = conn
+        self.cursor = conn.cursor()
+
+    def _execute_query(self, query, params=None, commit=False):
+        try:
+            self.cursor.execute(query, params)
+            if commit:
+                self.conn.commit()
+            return self.cursor
+        except psycopg2.Error as e:
+            print(f"Erro na execucao da consulta de comprador: {e}")
+            self.conn.rollback()
+            return None
+
+    def create(self, comprador: Comprador):
+        query = "INSERT INTO compradores (nome_comprador, data_compra, id_compradores) VALUES (%s, %s, %s) RETURNING nome_comprador"
+        params = (comprador.nome_comprador, comprador.data_compra, comprador.id_compradores)
+        cursor = self._execute_query(query, params, commit=True)
+        if cursor:
+            comprador.id = cursor.fetchone()[0]
+            return comprador
         return None
+
+    def get_by_aparelho_id(self, aparelho_id: int):
+        query = "SELECT nome_comprador, data_compra, id_compradores FROM compradores WHERE id_compradores = %s"
+        cursor = self._execute_query(query, (aparelho_id,))
+        if cursor:
+            row = cursor.fetchone()
+            if row:
+                return Comprador(id=row[0], nome_comprador=row[0], data_compra=row[1], id_compradores=row[2])
+        return None
+    
+    def list_all(self):
+        query = "SELECT nome_comprador, data_compra, id_compradores FROM compradores"
+        cursor = self._execute_query(query)
+        if cursor:
+            compradores = []
+            for row in cursor.fetchall():
+                compradores.append(Comprador(id=row[0], nome_comprador=row[0], data_compra=row[1], id_compradores=row[2]))
+            return compradores
+        return []
